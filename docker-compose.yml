@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: 
+      context: ../hcp-gateway
+      dockerfile: Dockerfile
+    image: hcp-gateway:latest
+    ports: ["8080:8080"]
+    depends_on:
+      - consensus-node-1
+      - postgres
+      - redis
+    environment:
+      - RUST_LOG=debug
+      - CONSENSUS_URL=http://consensus-node-1:26657
+    networks:
+      - hcp-net
+
+  consensus-node-1:
+    build:
+      context: ../hcp-consensus
+      dockerfile: Dockerfile
+    image: hcp-consensus:latest
+    ports: 
+      - "26657:26657" # RPC
+      - "26656:26656" # P2P
+      - "9090:9090"   # gRPC
+    environment:
+      - MONIKER=node1
+      - CHAIN_ID=hcp-testnet-1
+    volumes:
+      - node1-data:/root/.hcpd
+    networks:
+      - hcp-net
+
+  # Task 12: Add more nodes (2-4) for demo
+  consensus-node-2:
+    image: hcp-consensus:latest
+    environment:
+      - MONIKER=node2
+      - CHAIN_ID=hcp-testnet-1
+    depends_on:
+      - consensus-node-1
+    networks:
+      - hcp-net
+
+  ui:
+    build:
+      context: ../hcp-ui
+      dockerfile: Dockerfile
+    image: hcp-ui:latest
+    ports: ["3000:80"]
+    depends_on:
+      - gateway
+    networks:
+      - hcp-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ../hcp-consensus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports: ["9090:9090"]
+    networks:
+      - hcp-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3001:3000"]
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - hcp-net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=hcp
+      - POSTGRES_USER=hcp
+      - POSTGRES_PASSWORD=hcp123
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - hcp-net
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    networks:
+      - hcp-net
+
+networks:
+  hcp-net:
+    driver: bridge
+
+volumes:
+  node1-data:
+  postgres-data:
