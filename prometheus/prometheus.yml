@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'hcp-consensus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['consensus-node-1:26660', 'consensus-node-2:26660']
+    metrics_path: /metrics
+
+  - job_name: 'hcp-gateway'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['gateway:8080']
+    metrics_path: /performance/metrics
+
+  - job_name: 'hcp-server'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['server:8081']
+    metrics_path: /metrics

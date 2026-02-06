@@ -9,11 +9,28 @@ services:
     ports: ["8080:8080"]
     depends_on:
       - consensus-node-1
+      - server
       - postgres
       - redis
     environment:
       - RUST_LOG=debug
       - CONSENSUS_URL=http://consensus-node-1:26657
+      - SERVER_URL=http://server:8081
+    networks:
+      - hcp-net
+
+  server:
+    build:
+      context: ../hcp-server
+      dockerfile: Dockerfile
+    image: hcp-server:latest
+    ports: ["8081:8081"]
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - DB_HOST=postgres
+      - REDIS_ADDR=redis:6379
     networks:
       - hcp-net
 
@@ -26,6 +43,7 @@ services:
       - "26657:26657" # RPC
       - "26656:26656" # P2P
       - "9090:9090"   # gRPC
+      - "26660:26660" # Prometheus Metrics
     environment:
       - MONIKER=node1
       - CHAIN_ID=hcp-testnet-1
@@ -34,7 +52,6 @@ services:
     networks:
       - hcp-net
 
-  # Task 12: Add more nodes (2-4) for demo
   consensus-node-2:
     image: hcp-consensus:latest
     environment:
@@ -59,7 +76,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ../hcp-consensus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules
     ports: ["9090:9090"]
     networks:
       - hcp-net
@@ -69,6 +87,11 @@ services:
     ports: ["3001:3000"]
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/json
+    depends_on:
+      - prometheus
     networks:
       - hcp-net
 
