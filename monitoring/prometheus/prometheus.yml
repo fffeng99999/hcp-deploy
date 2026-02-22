@@ -13,17 +13,17 @@ scrape_configs:
   - job_name: 'hcp-consensus'
     scrape_interval: 5s
     static_configs:
-      - targets: ['consensus-node-1:26660', 'consensus-node-2:26660']
+      - targets: ['host.docker.internal:26660', 'host.docker.internal:26661', 'host.docker.internal:26662', 'host.docker.internal:26663']
     metrics_path: /metrics
 
   - job_name: 'hcp-gateway'
     scrape_interval: 5s
     static_configs:
-      - targets: ['gateway:8080']
+      - targets: ['host.docker.internal:8080']
     metrics_path: /performance/metrics
 
   - job_name: 'hcp-server'
     scrape_interval: 15s
     static_configs:
-      - targets: ['server:8081']
+      - targets: ['host.docker.internal:8081']
     metrics_path: /metrics
